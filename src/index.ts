@@ -1,9 +1,13 @@
 import KeyvRedis from "@keyv/redis";
 import got from "got";
 
-const _got = (url: string, keyvredis: KeyvRedis) => {
+const cache = new KeyvRedis("redis://localhost:6379");
+// const cache = new Map();
+// Also reproducible when using Map as cache.
+
+const _got = (url: string) => {
     return got(new URL(url), {
-        cache: keyvredis,
+        cache,
         cacheOptions: {shared: false},
     })
         .then((res) => console.log({
@@ -15,8 +19,6 @@ const _got = (url: string, keyvredis: KeyvRedis) => {
 }
 
 async function request() {
-    const keyvredis = new KeyvRedis("redis://localhost:6379");
-
     const urls = [
         "https://gist.githubusercontent.com/Aericio/3f20a5b4447b1ca6a7348f13987dc706/raw/d1a1001f17065a88acb71ff448de4a1a76db7077/data.json",
         "https://jsonplaceholder.typicode.com/todos/1",
@@ -30,24 +32,27 @@ async function request() {
         // GitHub Gist -- works perfectly fine.
         // Using Varnish cache -- no cloudflare.
         console.log("requesting");
-        await _got(urls[0]!, keyvredis);
+        await _got(urls[0]!);
         console.log("still alive");
+        if (cache instanceof Map) console.log(cache.keys());
     }
 
     for (let i = 0; i < 2; i++) {
         // jsonplaceholder -- works perfectly fine.
         // Uses Cloudflare -- cf-cache-status: HIT
         console.log("requesting");
-        await _got(urls[1]!, keyvredis);
+        await _got(urls[1]!);
         console.log("still alive");
+        if (cache instanceof Map) console.log(cache.keys());
     }
 
     for (let i = 0; i < 2; i++) {
         // oneskyapp -- works perfectly fine.
         // Uses Cloudflare -- cf-cache-status: REVALIDATED
         console.log("requesting");
-        await _got(urls[2]!, keyvredis);
+        await _got(urls[2]!);
         console.log("still alive");
+        if (cache instanceof Map) console.log(cache.keys());
     }
 
     // Comment out this test to see next test.
@@ -57,8 +62,9 @@ async function request() {
         // Danbooru -- caches response on first request, but on second request, it freezes.
         // Uses Cloudflare -- cf-cache-status: DYNAMIC
         console.log("requesting");
-        await _got(urls[3]!, keyvredis);
+        await _got(urls[3]!);
         console.log("still alive");
+        if (cache instanceof Map) console.log(cache.keys());
     }
 
     // Once Tatsu has been added to the cache, it freezes.
@@ -67,8 +73,9 @@ async function request() {
         // Tatsu -- caches response on first request, but on second request, it freezes.
         // Uses Cloudflare -- cf-cache-status: DYNAMIC
         console.log("requesting");
-        await _got(urls[4]!, keyvredis);
+        await _got(urls[4]!);
         console.log("still alive");
+        if (cache instanceof Map) console.log(cache.keys());
     }
 }
 
