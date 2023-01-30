@@ -8,6 +8,10 @@ const cache = new KeyvRedis("redis://localhost:6379");
 const _got = (url: string) => {
     return got(new URL(url), {
         cache,
+        // Shared is set as false to allow `cache-control: private` responses to still cache.
+        // The response would typically be ignored due to constraints in RFC7234#rfc.section.3
+        // This does not affect my issue with caches causing freezes, regardless of true or false.
+        // @see https://github.com/sindresorhus/got/issues/480
         cacheOptions: {shared: false},
     })
         .then((res) => console.log({
